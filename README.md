@@ -1,2 +1,2 @@
 # graphene-requests
-Microservices support for Graphene.
+Microservice support for Graphene.
