@@ -1,6 +1,6 @@
 import requests
 from string import Template
-from graphene import ObjectType
+from graphene import ObjectType, String
 
 from .utils import convert, selections_to_string
 
@@ -36,6 +36,12 @@ class RequestsObjectType(ObjectType):
             }
         ]
     '''
+    __typename = String()
+    def __init__(self, *args, **kwargs):
+        if '__typename' in kwargs and kwargs['__typename']:
+            self.__typename = kwargs.pop('__typename')
+        super().__init__(self, *args, **kwargs)
+
     def __init_subclass__(cls):
         _url = cls.Meta.url
         super().__init_subclass__()
