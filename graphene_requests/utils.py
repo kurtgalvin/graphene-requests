@@ -5,8 +5,10 @@ def selections_to_string(selections):
     for i in selections:
         if isinstance(i, dict):
             string += f" {i['name']} "
-            assert not 'arguments' in i, "arguments not implemented"
             assert not 'directives' in i, "directives not implemented"
+            if 'arguments' in i and i['arguments']:
+                parsed = [f"{x['key']}: {x['value']} " for x in i['arguments']]
+                string += f"({''.join(parsed)})"
             if 'selections' in i and i['selections']:
                 string += f"{{{selections_to_string(i['selections'])}}}"
         else:
