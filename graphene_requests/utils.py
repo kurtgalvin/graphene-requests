@@ -1,4 +1,28 @@
+from .fields import RequestsField
 
+def _convert(string):
+    assert isinstance(string, str), "can only convert string"
+    value = ''
+    for i in string:
+        value += f"_{i.lower()}" if i.isupper() else i
+    return value
+
+def find_required_fields(cls, selections):
+    fields = []
+    for i in selections:
+        key = _convert(i.name.value)
+        obj = cls.__dict__[key]
+        if isinstance(obj, RequestsField) and obj.required_fields:
+            fields.extend(obj.required_fields)
+    return fields
+
+def remove_fields(cls, selections):
+    def parse(selection):
+        key = _convert(selection.name.value)
+        if isinstance(cls.__dict__[key], RequestsField):
+            return False
+        return True
+    return list(filter(parse, selections))
 
 def selections_to_string(selections):
     string=''
@@ -22,8 +46,6 @@ def selections_to_string(selections):
 def convert(obj):
     result={}
     for k, v in obj.items():
-        new_key = ''
-        for i in k:
-            new_key += f"_{i.lower()}" if i.isupper() else i
+        new_key = _convert(k)
         result.setdefault(new_key, v)
     return result

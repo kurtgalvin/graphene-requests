@@ -2,7 +2,7 @@ import requests
 from string import Template
 from graphene import ObjectType, String
 
-from .utils import convert, selections_to_string
+from .utils import convert, selections_to_string, remove_fields, find_required_fields
 
 
 class RequestsObjectType(ObjectType):
@@ -40,7 +40,7 @@ class RequestsObjectType(ObjectType):
     def __init__(self, *args, **kwargs):
         if '__typename' in kwargs and kwargs['__typename']:
             self.__typename = kwargs.pop('__typename')
-        super().__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __init_subclass__(cls):
         _url = cls.Meta.url
@@ -56,7 +56,14 @@ class RequestsObjectType(ObjectType):
             selections = selections_to_string(selections)
         else:
             selections = info.field_asts[0].selection_set.selections
+            requireds = find_required_fields(cls, selections)
+            selections = remove_fields(cls, selections)
             selections = selections_to_string(selections)
+
+            if requireds:
+                selections += ' '.join(requireds)
+
+        print(selections)
 
         template = Template('''{
             $field_name ($args) {
@@ -82,6 +89,8 @@ class RequestsObjectType(ObjectType):
 
         assert not 'errors' in  r.json(), r.json()['errors']
         name = cls._meta.name
+        if not r.json()['data'][name]:
+            return None
         if isinstance(r.json()['data'][name], list):
             return [cls(**convert(i)) for i in r.json()['data'][name]]
         return cls(**convert(r.json()['data'][name]))
