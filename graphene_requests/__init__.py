@@ -1,2 +1,2 @@
 from .object_type import RequestsObjectType
-from .fields import RequestsField
+from .fields import RequestsField, RequestsList

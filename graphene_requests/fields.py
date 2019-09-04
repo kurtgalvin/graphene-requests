@@ -1,8 +1,13 @@
-from graphene import Field
+from graphene import Field, List
 
 
 class RequestsField(Field):
-    def __init__(self, *args, **kwargs):
-        required_fields = kwargs.pop('required_fields', None)
+    def __init__(self, *args, required_fields=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.required_fields = required_fields
+
+
+class RequestsList(List):
+    def __init__(self, *args, required_fields=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.required_fields = required_fields

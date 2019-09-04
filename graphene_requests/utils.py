@@ -1,4 +1,4 @@
-from .fields import RequestsField
+from .fields import RequestsField, RequestsList
 
 def _convert(string):
     assert isinstance(string, str), "can only convert string"
@@ -12,14 +12,14 @@ def find_required_fields(cls, selections):
     for i in selections:
         key = _convert(i.name.value)
         obj = cls.__dict__[key]
-        if isinstance(obj, RequestsField) and obj.required_fields:
+        if isinstance(obj, (RequestsField, RequestsList)) and obj.required_fields:
             fields.extend(obj.required_fields)
     return fields
 
 def remove_fields(cls, selections):
     def parse(selection):
         key = _convert(selection.name.value)
-        if isinstance(cls.__dict__[key], RequestsField):
+        if isinstance(cls.__dict__[key], (RequestsField, RequestsList)):
             return False
         return True
     return list(filter(parse, selections))
