@@ -63,8 +63,6 @@ class RequestsObjectType(ObjectType):
             if requireds:
                 selections += ' '.join(requireds)
 
-        print(selections)
-
         template = Template('''{
             $field_name ($args) {
                 $selections
