@@ -3,6 +3,7 @@ from string import Template
 from graphene import ObjectType, String
 
 from .utils import convert, selections_to_string, remove_fields, find_required_fields
+from .requests import GrapheneRequests
 
 
 class RequestsObjectType(ObjectType):
@@ -48,7 +49,16 @@ class RequestsObjectType(ObjectType):
         cls._meta.__dict__['url'] = _url
 
     @classmethod
-    def from_service(cls, info, field_name=None, selections=None, **kwargs):
+    def from_service(cls, info, field_name=None, selections=None, selection_set=None, **kwargs):
+
+        if selection_set:
+            gr = GrapheneRequests(cls, selection_set)
+        else:
+            gr = GrapheneRequests.from_info(cls, info)
+        gr.send(cls._meta.url)
+
+
+
         if not field_name:
             field_name = info.field_name
         if selections:
