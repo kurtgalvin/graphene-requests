@@ -1,31 +1,32 @@
 import requests
 
 from .utils import _convert
-from .fields import SelectionSet, Selection, RequestsField, RequestsList
+from .fields import FieldSet, RequestsField, RequestsList
 
 
 class GrapheneRequests:
     __slots__ = ('query',)
 
-    def __init__(self, class_, selection_set):
-        assert isinstance(selection_set, SelectionSet), "selection_set must be of type `SelectionSet`"
-
-        # TODO: index to last self.query and keep appending aproved fields
-        self.query = SelectionSet([])
-        for set_ in selection_set:
-            self.query.append(Selection(set_.field, set_.args, []))
+    def __init__(self, class_, query):
+        new_query = []
+        for set_ in query:
+            required = []
+            new_query.append(FieldSet(set_.field, set_.args, []))
             for i in set_.sub_fields:
                 obj = class_.__dict__[_convert(i.field)]
                 if isinstance(obj, (RequestsField, RequestsList)):
                     for field in obj.required_fields:
-                        self.query.append(Selection(field, {}, []))
+                        required.append(FieldSet(field, {}, []))
                 else:
-                    self.query.append(i)
+                    if not i in new_query[-1].sub_fields:
+                        new_query[-1].add_sub_field(i)
+            for required_field in required:
+                if not required_field in new_query[-1].sub_fields:
+                    new_query[-1].add_sub_field(required_field)
+        self.query = new_query
 
     @classmethod
     def from_info(cls, class_, info):
-        selection_set = SelectionSet([])
-
         def unpack(obj): # recursive
             field = obj.name.value
             args = {}
@@ -35,20 +36,32 @@ class GrapheneRequests:
             if obj.selection_set:
                 for s in obj.selection_set.selections:
                     sub_fields.append(unpack(s))
-            return Selection(field, args, sub_fields)
-
+            return FieldSet(field, args, sub_fields)
+        
+        field_set = []
         for i in info.field_asts:
-            selection_set.append(unpack(i))
-        return cls(class_, selection_set)
+            field_set.append(unpack(i))
+        return cls(class_, field_set)
 
     def send(self, url):
-        def to_string(str_, obj):
-            print(obj)
-            return ''
+        def to_string(obj): # recursive
+            str_ = f'{obj.field} '
+            args = ''
+            for k, v in obj.args.items():
+                args += f'{k}: "{v}" ' if isinstance(v, str) else f'{k}: {v} '
+            if args:
+                str_ += f'({args})'
+            sub_fields = ''
+            for sub_field in obj.sub_fields:
+                sub_fields += to_string(sub_field)
+            if sub_fields:
+                str_ += f' {{{sub_fields}}} '
+            return str_
 
         string = ''
         for i in self.query:
-            string += to_string('', i)
-        json = {'query': string}
+            string += to_string(i)
+        json = {'query': f"{{{string}}}"}
         print(json)
-        # r = requests.post(url, json=json)
+        r = requests.post(url, json=json)
+        print(r.json())

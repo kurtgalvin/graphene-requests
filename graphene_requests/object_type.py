@@ -49,10 +49,10 @@ class RequestsObjectType(ObjectType):
         cls._meta.__dict__['url'] = _url
 
     @classmethod
-    def from_service(cls, info, field_name=None, selections=None, selection_set=None, **kwargs):
+    def from_service(cls, info, field_name=None, selections=None, query=None, **kwargs):
 
-        if selection_set:
-            gr = GrapheneRequests(cls, selection_set)
+        if query:
+            gr = GrapheneRequests(cls, query)
         else:
             gr = GrapheneRequests.from_info(cls, info)
         gr.send(cls._meta.url)
