@@ -5,7 +5,7 @@ from .fields import FieldSet, RequestsField, RequestsList
 
 
 class GrapheneRequests:
-    __slots__ = ('query',)
+    __slots__ = ('query', 'json')
 
     def __init__(self, class_, query):
         new_query = []
@@ -24,24 +24,6 @@ class GrapheneRequests:
                 if not required_field in new_query[-1].sub_fields:
                     new_query[-1].add_sub_field(required_field)
         self.query = new_query
-
-    @classmethod
-    def from_info(cls, class_, info):
-        def unpack(obj): # recursive
-            field = obj.name.value
-            args = {}
-            for arg in obj.arguments:
-                args[arg.name.value] = arg.value.value
-            sub_fields=[]
-            if obj.selection_set:
-                for s in obj.selection_set.selections:
-                    sub_fields.append(unpack(s))
-            return FieldSet(field, args, sub_fields)
-        
-        field_set = []
-        for i in info.field_asts:
-            field_set.append(unpack(i))
-        return cls(class_, field_set)
 
     def send(self, url):
         def to_string(obj): # recursive
@@ -62,6 +44,7 @@ class GrapheneRequests:
         for i in self.query:
             string += to_string(i)
         json = {'query': f"{{{string}}}"}
-        print(json)
         r = requests.post(url, json=json)
-        print(r.json())
+        assert not 'errors' in  r.json(), r.json()['errors']
+        self.json = r.json()
+        return self
