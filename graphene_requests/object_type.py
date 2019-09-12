@@ -8,11 +8,9 @@ from .fields import FieldSet
 
 
 class RequestsObjectType(ObjectType):
-    __typename = String()
-
     def __init__(self, *args, **kwargs):
         if '__typename' in kwargs and kwargs['__typename']:
-            self.__typename = kwargs.pop('__typename')
+            self.__dict__['__typename'] = kwargs.pop('__typename')
         super().__init__(*args, **kwargs)
 
     def __init_subclass__(cls):
@@ -23,6 +21,7 @@ class RequestsObjectType(ObjectType):
             meta_dict[i] = cls.Meta.__dict__[i]
         super().__init_subclass__()
         cls._meta.__dict__.update(meta_dict)
+        setattr(cls, '__typename', String())
 
     @classmethod
     def from_service(cls, info=None, query=None):
