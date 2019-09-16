@@ -1,2 +1,2 @@
-# graphene-requests
+# Graphene Requests
 ## Microservice support for Graphene.
